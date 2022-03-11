@@ -1,0 +1,42 @@
+function read_file($filename)
+{
+    if (!file_exists($filename)) {
+        throw new InvalidArgumentException("{$filename} not found");
+    }
+    $data = file($filename);
+    return array_map(fn($item) => unserialize($item), $data);
+}
+
+function write_file($data, $filename)
+{
+    if (!file_exists($filename)) {
+        throw new InvalidArgumentException("{$filename} not found");
+    }
+    $data = array_map(fn($item) => serialize($item), $data);
+    return file_put_contents($filename, implode(PHP_EOL, $data));
+}
+ 
+// Search in database file 
+function findInDb($criteria, $filename, $multiple = false)
+{
+    $apps = read_file($filename);
+    $results = array_values(
+        array_filter(
+            $apps,
+            fn($item) => count(array_intersect_assoc($item, $criteria)) === count($criteria)
+        )
+    );
+
+    return !count($results) ? null : ($multiple ? $results : $results[0]);
+}
+
+// Search in app file
+function findApp($criteria)
+{
+    return findInDb($criteria, './data/app.data');
+}
+
+// Search in code file
+function findCode($criteria)
+{
+    return findInDb($criteria, './data/code.data')
